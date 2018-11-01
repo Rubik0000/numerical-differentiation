@@ -1,24 +1,26 @@
 
 
 
-const drawModule = (function(funcCanvasId, defectCanvasId){
+const drawModule = (function(funcCanvasId, defectRealCanvasId, defectIntendedCanvasId){
   const scaleStep = 0.5;
   const scaleAxe = 0.5;
 
-  const MAX_LIMIT_X = 10;
-  const MIN_LIMIT_X = 2;
-  const MAX_LIMIT_Y = 10;
-  const MIN_LIMIT_Y = 2;
+  const MAX_LIMIT_X = 5;
+  const MIN_LIMIT_X = 0;
+  const MAX_LIMIT_Y = 9e-6;
+  const MIN_LIMIT_Y = 0;
 
-  const DRAW_STEP = 0.1;
+  const DRAW_STEP = 0.2;
 
   const ctxFunc = document.getElementById(funcCanvasId);
-  const ctxDef = document.getElementById(defectCanvasId);
+  const ctxDefReal = document.getElementById(defectRealCanvasId);
+  const ctxDefInt = document.getElementById(defectIntendedCanvasId);
 
   const funcChart = createChart(ctxFunc);
-  const defectChart = createChart(ctxDef);
-  onWheel(ctxFunc, funcChart);
-  onWheel(ctxDef, defectChart);
+  const defectRealChart = createChart(ctxDefReal);
+  const defectIntChart = createChart(ctxDefInt);
+  //onWheel(ctxFunc, funcChart);
+  //onWheel(ctxDef, defectChart);
 
   function createChart(ctx) {
     return new Chart(ctx, {
@@ -34,25 +36,25 @@ const drawModule = (function(funcCanvasId, defectCanvasId){
               min : -MAX_LIMIT_X,
               max : MAX_LIMIT_X,
             },
-            stepSize : 1
+            //stepSize : 1
           }],
           yAxes: [{
             type: 'linear',
             ticks : {
-              min : -MAX_LIMIT_Y,
-              max : MAX_LIMIT_Y,
+              //min : -MAX_LIMIT_Y,
+              //max : MAX_LIMIT_Y,
             },
-            stepSize : 1
+            //stepSize : 1
           }]
         }
       }
     });
   }
 
-  function onWheel(ctx, chart) {
+  /*function onWheel(ctx, chart) {
     ctx.addEventListener("wheel", e => {
       e.preventDefault();
-
+       return;
       let bigger = e.wheelDelta > 0;
       let axes = chart.options.scales;
     
@@ -91,9 +93,9 @@ const drawModule = (function(funcCanvasId, defectCanvasId){
         }
       chart.update();    
     });
-  }
+  }*/
 
-  function drawGraph(chart, func, label) {
+  function drawGraph(chart, func, label, color) {
     const minX = chart.options.scales.xAxes[0].ticks.min + DRAW_STEP;
     const maxX = chart.options.scales.xAxes[0].ticks.max - DRAW_STEP;
     const g = [];
@@ -104,22 +106,57 @@ const drawModule = (function(funcCanvasId, defectCanvasId){
       data : g,
       fill : false,
       label : label,
-      pointRadius : 0,
+      //pointRadius : 1,
+      borderColor: color,
     });
     chart.update();
   }
 
   return {
-    drawOnFuncChart : (func, label) => 
-      drawGraph(funcChart, func, label),
+    drawOnFuncChart : (func, label, color) => 
+      drawGraph(funcChart, func, label, color),
 
-    drawOnDefectChart : (func, label) => 
-      drawGraph(defectChart, func, label),  
+    drawOnDefectRealChart : (func, label, color) => 
+      drawGraph(defectRealChart, func, label, color),
+
+    drawOnDefectIntChart : (func, label, color) =>
+      defectIntChart(defectIntChart, func, label, color),   
   }
 
-})("functions", "defects");
+})("functions", "defectsReal", "defectsIntented");
 
-drawModule.drawOnFuncChart(x => x * x);
+//drawModule.drawOnFuncChart(i => 18 * ((5 + 9 * i ** 2) - 36 * i ** 2) / (5 + 9 * i ** 2)**3 * (0.01 / 2));
+//drawModule.drawOnFuncChart(i => 6 * i * (0.1 / 2));
+let func = x => x ** 3 + x ** 2;
+let func1 = x => 3 * x ** 2 + 2 * x;
+let func2 = x => 6 * x + 2;
+let H = 0.01;
+
+let aprF = x => getNumericalAproximation(
+        //i => i ** 3 - 2  * i + 3,
+        func,
+        //x => 1/(Math.abs(x) + 1),     
+        x, 
+        [-2, -1, 0, 1],
+        1,
+        3,
+        H 
+      );
+
+//drawModule.drawOnFuncChart(aprF);
+//let r = x => H / 2 * Math.abs(func2(x)) + Math.abs(func(x)) * 5e-23 / H;
+//drawModule.drawOnDefectChart(r, "intend", "green");
+//drawModule.drawOnFuncChart(x => Math.abs(aprF(x) - func1(x)), "real", "red");
+
+drawModule.drawOnFuncChart(func, "func");
+drawModule.drawOnFuncChart(aprF, "func1");
+
+drawModule.drawOnDefectRealChart(x => Math.abs(aprF(x) - func1(x)), "real");
+
+//drawModule.drawOnDefectChart(x => Math.abs(aprF(x) - func1(x)), "real", "blue");
+//drawModule.drawOnFuncChart(x => Math.cos(x));
+
+//drawModule.drawOnFuncChart(x => -Math.sin(x) * 0.01 / 2 + 10 ** (-10) * Math.sin(x) / 0.1);
 
 
 
@@ -136,7 +173,7 @@ let dataAp = (function() {
         [-2, -1, 0, 1],
         1,
         3,
-        0.01 
+        0.1 
       )
     });
   }
