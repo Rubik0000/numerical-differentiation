@@ -1,26 +1,18 @@
 
 
 
-const drawModule = (function(funcCanvasId, defectRealCanvasId, defectIntendedCanvasId){
-  const scaleStep = 0.5;
-  const scaleAxe = 0.5;
-
-  const MAX_LIMIT_X = 5;
-  const MIN_LIMIT_X = 0;
-  const MAX_LIMIT_Y = 9e-6;
-  const MIN_LIMIT_Y = 0;
-
+const drawModule = (function(funcCanvasId, derivativeCanvasId, defectRealCanvasId, defectIntendedCanvasId) {
   const DRAW_STEP = 0.2;
 
   const ctxFunc = document.getElementById(funcCanvasId);
   const ctxDefReal = document.getElementById(defectRealCanvasId);
   const ctxDefInt = document.getElementById(defectIntendedCanvasId);
+  const ctxDerivative = document.getElementById(derivativeCanvasId);
 
   const funcChart = createChart(ctxFunc);
+  const derivativeChart = createChart(ctxDerivative);
   const defectRealChart = createChart(ctxDefReal);
   const defectIntChart = createChart(ctxDefInt);
-  //onWheel(ctxFunc, funcChart);
-  //onWheel(ctxDef, defectChart);
 
   function createChart(ctx) {
     return new Chart(ctx, {
@@ -32,74 +24,20 @@ const drawModule = (function(funcCanvasId, defectRealCanvasId, defectIntendedCan
         scales: {
           xAxes: [{
             type: 'linear',
-            ticks : {
-              min : -MAX_LIMIT_X,
-              max : MAX_LIMIT_X,
-            },
-            //stepSize : 1
           }],
           yAxes: [{
             type: 'linear',
-            ticks : {
-              //min : -MAX_LIMIT_Y,
-              //max : MAX_LIMIT_Y,
-            },
-            //stepSize : 1
           }]
         }
       }
     });
   }
 
-  /*function onWheel(ctx, chart) {
-    ctx.addEventListener("wheel", e => {
-      e.preventDefault();
-       return;
-      let bigger = e.wheelDelta > 0;
-      let axes = chart.options.scales;
-    
-        if (bigger) {
-          if (-axes.xAxes[0].ticks.min > MIN_LIMIT_X &&
-              axes.xAxes[0].ticks.max > MIN_LIMIT_X) {  
-
-            axes.xAxes[0].ticks.min += scaleAxe;
-            axes.xAxes[0].ticks.max -= scaleAxe;
-          }
-        }
-        else {
-          if (-axes.xAxes[0].ticks.min < MAX_LIMIT_X &&
-              axes.xAxes[0].ticks.max < MAX_LIMIT_X) {              
-
-            axes.xAxes[0].ticks.min -= scaleAxe;
-            axes.xAxes[0].ticks.max += scaleAxe;
-          }
-        }
-      
-        if (bigger) {
-          if (-axes.yAxes[0].ticks.min > MIN_LIMIT_Y &&
-              axes.yAxes[0].ticks.max > MIN_LIMIT_Y) {
-            
-            axes.yAxes[0].ticks.min += scaleAxe;
-            axes.yAxes[0].ticks.max -= scaleAxe;
-          }
-        }
-        else {
-          if (-axes.yAxes[0].ticks.min < MAX_LIMIT_Y &&
-              axes.yAxes[0].ticks.max < MAX_LIMIT_Y) {  
-           
-            axes.yAxes[0].ticks.min -= scaleAxe;
-            axes.yAxes[0].ticks.max += scaleAxe;
-          }
-        }
-      chart.update();    
-    });
-  }*/
-
-  function drawGraph(chart, func, label, color) {
+  function drawGraph(chart, func, left, right, label, color) {
     const minX = chart.options.scales.xAxes[0].ticks.min + DRAW_STEP;
     const maxX = chart.options.scales.xAxes[0].ticks.max - DRAW_STEP;
     const g = [];
-    for (let x = minX; x <= maxX; x += DRAW_STEP) {
+    for (let x = left; x <= right; x += DRAW_STEP) {
       g.push({ x : x, y : func(x) });
     }
     chart.data.datasets.push({
@@ -112,180 +50,159 @@ const drawModule = (function(funcCanvasId, defectRealCanvasId, defectIntendedCan
     chart.update();
   }
 
+  function removeData(chart) {
+    chart.data.labels = [];
+    chart.data.datasets = [];
+    chart.update();
+  }
+
+
   return {
-    drawOnFuncChart : (func, label, color) => 
-      drawGraph(funcChart, func, label, color),
+    drawOnFuncChart : (func, left, right) => 
+      drawGraph(funcChart, func, left, right, "функция", "blue"),
 
-    drawOnDefectRealChart : (func, label, color) => 
-      drawGraph(defectRealChart, func, label, color),
-
-    drawOnDefectIntChart : (func, label, color) =>
-      defectIntChart(defectIntChart, func, label, color),   
-  }
-
-})("functions", "defectsReal", "defectsIntented");
-
-//drawModule.drawOnFuncChart(i => 18 * ((5 + 9 * i ** 2) - 36 * i ** 2) / (5 + 9 * i ** 2)**3 * (0.01 / 2));
-//drawModule.drawOnFuncChart(i => 6 * i * (0.1 / 2));
-let func = x => x ** 3 + x ** 2;
-let func1 = x => 3 * x ** 2 + 2 * x;
-let func2 = x => 6 * x + 2;
-let H = 0.01;
-
-let aprF = x => getNumericalAproximation(
-        //i => i ** 3 - 2  * i + 3,
-        func,
-        //x => 1/(Math.abs(x) + 1),     
-        x, 
-        [-2, -1, 0, 1],
-        1,
-        3,
-        H 
-      );
-
-//drawModule.drawOnFuncChart(aprF);
-//let r = x => H / 2 * Math.abs(func2(x)) + Math.abs(func(x)) * 5e-23 / H;
-//drawModule.drawOnDefectChart(r, "intend", "green");
-//drawModule.drawOnFuncChart(x => Math.abs(aprF(x) - func1(x)), "real", "red");
-
-drawModule.drawOnFuncChart(func, "func");
-drawModule.drawOnFuncChart(aprF, "func1");
-
-drawModule.drawOnDefectRealChart(x => Math.abs(aprF(x) - func1(x)), "real");
-
-//drawModule.drawOnDefectChart(x => Math.abs(aprF(x) - func1(x)), "real", "blue");
-//drawModule.drawOnFuncChart(x => Math.cos(x));
-
-//drawModule.drawOnFuncChart(x => -Math.sin(x) * 0.01 / 2 + 10 ** (-10) * Math.sin(x) / 0.1);
-
-
-
-const ctx = document.getElementById("functions");
-let dataAp = (function() {
-  const dt = [];
-  for (let i = -3; i <= 3; ++i) {
-    dt.push({
-      x : i,
-      y : getNumericalAproximation(
-        x => 1 / (5 + 9 * x * x),
-        //x => 1/(Math.abs(x) + 1), 
-        i, 
-        [-2, -1, 0, 1],
-        1,
-        3,
-        0.1 
-      )
-    });
-  }
-  return dt;  
-})();
-
-let dataReal = (function() {
-  const dt = [];
-  for (let i = -3; i <= 3; ++i) {
-    dt.push({
-      x : i,
-      y : 18 * i / Math.pow((5 + 9 * i * i), 2),
-      //y : 1/Math.pow((Math.abs(i) + 1), 2)
-    });
-  }
-  return dt;  
-})();
-
-let porMeth = (function() {
-  const dt = [];
-  for (let i = -3; i <= 3; ++i) {
-    dt.push({
-      x : i,
-      y : 18 * ((5 + 9 * i ** 2) - 36 * i ** 2) / (5 + 9 * i ** 2)**3 * (0.01 / 2),
-      //y : 1/Math.pow((Math.abs(i) + 1), 2)
-    });
-  }
-  return dt;
-})();
-
-/*var myLineChart = new Chart(ctx, {
-    type: 'line',
-    data: {
-        datasets: 
-        [
-          { 
-            data: dataAp,
-            //label: "Africa",
-            borderColor: "#3e95cd",
-            fill: false
-          },
-          {
-            data : dataReal,
-            fill: false,
-            borderColor : "red",
-          },
-          {
-            data : porMeth,
-            fill: false,
-            borderColor : "green",
-          },
-
-        ],
-    },
-    options: {
-        scales: {
-            xAxes: [{
-                type: 'linear',
-                //position: 'bottom',
-                ticks : {
-                  min : -5,
-                  max : 5,
-                }
-                //stepSize : 2
-            }],
-            yAxes: [{
-                type: 'linear',
-                //position: 'bottom'
-                ticks : {
-                  min : -5,
-                  max : 5,
-                }
-                //stepSize : 0.5
-            }]
-        }
-    }
-});*/
-
-/*ctx.addEventListener("wheel", e => {
+    drawOnDerivativeChart : (func, left, right) =>
+      drawGraph(derivativeChart, func, left, right, "приближенная производная", "green"), 
     
-    let bigger = e.wheelDelta < 0;
-    let axes = myLineChart.options.scales;
-    for(let ax in axes) {
-       if (bigger) {
-         ++axes[ax][0].ticks.min;
-         --axes[ax][0].ticks.max;
-       }
-       else {
-         --axes[ax][0].ticks.min;
-         ++axes[ax][0].ticks.max;
-       }
-    }
-    myLineChart.update();    
-});*/
+    drawOnDefectRealChart : (func, left, right) => 
+      drawGraph(defectRealChart, func, left, right, "полученная погрешность", "red"),
+
+    drawOnDefectIntChart : (func, left, right) =>
+      drawGraph(defectIntChart, func, left, right, "оцененная погрешность", "pink"),
+
+    removeFromFuncChart : () => removeData(funcChart),
+    removeFromRealChart : () => removeData(defectRealChart),
+    removeFromIntChart  : () => removeData(defectIntChart),
+    removeFromDerivativeChart : () => removeData(derivativeChart),
+  
+    removeFromAll : () => {
+      removeData(funcChart);
+      removeData(defectRealChart);
+      removeData(defectIntChart);
+      removeData(derivativeChart);
+    },
+  }
+
+})("function", "derivative", "defectsReal", "defectsIntented");
 
 
-/*let vec = gaussMethod([
-  [2, 4, 1, 36],
-  [5, 2, 1, 47],
-  [2, 3, 4, 37],
-]);
 
-let m = getMatrixFromNet([-1, 0, 1], 2, 1);*/
+const inputModule = (function(hInputId, leftInputId, rightInputId) {
+  const MIN_H = 0;
 
-let t = getNumericalAproximation(
-    x => x * x, 
-    5, 
-    [-2, -1, 0, 1],
-    1,
-    3,
-    0.1 
-);
+  const BAD_COLOR = "#EC7063";
+  const GOOD_COLOR = "#FFFFFF";
+
+  const hInput = document.getElementById(hInputId);
+  const leftInput = document.getElementById(leftInputId);
+  const rightInput = document.getElementById(rightInputId);
+  
+  let currH = 0.1;
+  let currLeft = -5;
+  let currRight = 5;
+
+  function onHchange(callback) {
+    hInput.addEventListener("keyup", key => {
+      const H = Number(hInput.value);
+      if (isNaN(H) || H <= MIN_H) {
+        hInput.style.backgroundColor = BAD_COLOR;
+        return;
+      }
+      hInput.style.backgroundColor = GOOD_COLOR;
+      if (currH === H) return;
+
+      currH = H;
+      callback(currH, currLeft, currRight); 
+    });
+  }
+
+  function onLeftChange(callback) {
+    leftInput.addEventListener("keyup", key => {
+      const left = Number(leftInput.value);
+      if (isNaN(left) || left >= currRight) {
+        leftInput.style.backgroundColor = BAD_COLOR;
+        return;
+      }
+      leftInput.style.backgroundColor = GOOD_COLOR;
+      if (left === currLeft) return;
+
+      currLeft = left;
+      callback(currH, currLeft, currRight);
+    });
+  }
+
+  function onRightChange(callback) {
+    rightInput.addEventListener("keyup", key => {
+      const right = Number(rightInput.value);
+      if (isNaN(right) || right <= currLeft) {
+        rightInput.style.backgroundColor = BAD_COLOR;
+        return;
+      }
+      rightInput.style.backgroundColor = GOOD_COLOR;
+      if (right === currRight) return;
+
+      currRight = right;
+      callback(currH, currLeft, currRight);
+    });
+  }  
+
+  return {
+    onHchange : onHchange,
+    onLeftChange : onLeftChange,
+    onRightChange : onRightChange,
+  }
+
+})("step", "left", "right");
+
+
+function main() {
+  const func = x => Math.sin(x);
+  const der1 = x => Math.cos(x);
+  const der2 = x => -Math.sin(x);
+  const defectMethod = (x, h) =>
+    h / 2 * Math.abs(der2(x));
+
+  const eps = 10e-52;
+  const defectCalc = (x, h) =>  
+    eps * func(x) / h;
+
+  const m = 1;
+  const k = 3;
+
+  const net = [-2, -1, 0, 1];
+
+  const aprDer = (x, h) => 
+    getNumericalAproximation(func, x, net, m, k, h);
+
+  inputModule.onHchange((h, l, r) => {
+    drawModule.removeFromRealChart();
+    drawModule.removeFromDerivativeChart();
+    drawModule.removeFromIntChart();
+
+    drawModule.drawOnDefectRealChart(x => Math.abs(aprDer(x, h) - der1(x)), l, r);
+    drawModule.drawOnDerivativeChart(x => aprDer(x, h), l, r);
+    drawModule.drawOnDefectIntChart(x => defectMethod(x, h) + defectCalc(x, h), l, r);
+  });
+
+  const redrawAll = (h, l, r) => {
+    drawModule.removeFromAll();
+
+    drawModule.drawOnFuncChart(func, l, r);
+    drawModule.drawOnDerivativeChart(x => aprDer(x, h), l, r);
+    drawModule.drawOnDefectRealChart(x => Math.abs(aprDer(x, h) - der1(x)), l, r);
+    drawModule.drawOnDefectIntChart(x => defectMethod(x, h) + defectCalc(x, h), l, r);
+  };
+
+  inputModule.onLeftChange(redrawAll);
+  inputModule.onRightChange(redrawAll);
+
+  drawModule.drawOnFuncChart(func, -5, 5);
+  drawModule.drawOnDerivativeChart(x => aprDer(x, 0.1), -5, 5);
+  drawModule.drawOnDefectRealChart(x => Math.abs(aprDer(x, 0.1) - der1(x)), -5, 5);  
+  drawModule.drawOnDefectIntChart(x => defectMethod(x, 0.1) + defectCalc(x, 0.1), -5, 5);
+}
+
+
 
 
 function gaussMethod(matrix) {
@@ -337,7 +254,7 @@ function getMatrixFromNet(tableNet, m, k) {
   const N = tableNet.length;
   for (let i = 0; i < m + k; ++i) {
     for (let j = 0; j < N; ++j) {
-      resMatr[i][j] = Math.pow(tableNet[j], i);
+      resMatr[i][j] = tableNet[j] ** i;
     }
     resMatr[i][N] = i === m ? factorial(m) : 0;
   }
@@ -361,9 +278,9 @@ function getNumericalAproximation(func, x, tableNet, m, k, h) {
   for (let i = 0; i < nodes.length; ++i) {
     result += coefs[i] * func(nodes[i]);
   }
-  return result / Math.pow(h, m);
+  return result / (h ** m);
 }
 
 
 
-
+main();

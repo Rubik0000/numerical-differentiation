@@ -12,14 +12,32 @@
 </head>
 <body>
   
+  <form class="inputData">
+    <label>
+      Шаг h:
+      <input type="text" id="step" value="0.1">
+    </label>
+    <label>
+      Левая граница:
+      <input type="text" id="left" value="-5">
+    </label>
+    <label>
+      Правая граница:
+      <input type="text" id="right" value="5">
+    </label>
+  </form>
+
   <div class="graphic">
-    <canvas id="functions" width="500" height="500"></canvas>
+    <canvas id="function" width="500" height="500"></canvas>
+  </div>
+  <div class="graphic">
+    <canvas id="derivative" width="500" height="500"></canvas>
   </div>
   <div class="graphic">
     <canvas id="defectsIntented" width="500" height="500"></canvas>    
   </div>
   <div class="graphic">
-    <canvas id="defectsReal" width="500" height="500"></canvas>    
+    <canvas id="defectsReal" width="500" height="500"></canvas>  
   </div>
   <script src="script/index.js"></script>
 </body>
