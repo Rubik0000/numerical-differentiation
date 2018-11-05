@@ -9,5 +9,6 @@ div.graphic {
 form.inputData {
     position: fixed;
     padding: 20px 20px 10px 20px;
-    background-color: #FFFFFF
+    background-color: #FFFFFF;
+    width: 100%;
 }

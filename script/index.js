@@ -1,4 +1,6 @@
 
+// Вариант 6
+// m=1; k=3; [−2; −1; 0; 1]. 
 
 
 const drawModule = (function(funcCanvasId, derivativeCanvasId, defectRealCanvasId, defectIntendedCanvasId) {
@@ -204,13 +206,21 @@ function main() {
 
 
 
-
+/**
+ * Решает систему лин. уравнений методом гаусса 
+ * @param {number[][]} matrix матрица из линейных уравнений
+ * @returns {number[]} вектор-решение
+ */
 function gaussMethod(matrix) {
+  if (matrix.length + 1 != matrix[0].length) {
+    throw new Error("Невозможно найти единственное решение");
+  }
   const matrCopy = matrix.slice();    
   for (let i = 0; i < matrCopy.length; ++i) {
     matrCopy[i] = matrix[i].slice();
   }
 
+  // прямой ход
   const N = matrCopy[0].length - 1;
   for (let i = 0; i < N; ++i) {
     let tmp = matrCopy[i][i];
@@ -224,6 +234,8 @@ function gaussMethod(matrix) {
       }
     }
   }
+
+  // обрытный ход
   const result = [];
   result[N - 1] = matrCopy[N - 1][N];
   for (let i = N - 2; i >= 0; --i) {
@@ -235,7 +247,14 @@ function gaussMethod(matrix) {
   return result;
 }
 
+
+/**
+ * Вычисляет факториал числа
+ */
 function factorial(n) {
+  if (n < 0) {
+    throw new Error("Попытка вычислить факториал от отрицательного числа");
+  }
   let res = 1;
   for (let i = 1; i <= n; ++i) {
     res *= i;
@@ -243,6 +262,14 @@ function factorial(n) {
   return res;
 }
 
+/**
+ * Составляет матрицу Вандермонда из шаблона сеточного приближения
+ *
+ * @param {number[]} tableNet сеточное приближение
+ * @param {number} m порядок производной
+ * @param {number} k порядок точности
+ * @returns {number[][]} матрица
+ */
 function getMatrixFromNet(tableNet, m, k) {
   const s = Math.abs(tableNet[0]);
   const L = Math.abs(tableNet[tableNet.length - 1]);
@@ -261,11 +288,29 @@ function getMatrixFromNet(tableNet, m, k) {
   return resMatr;
 }
 
+/**
+ * Находит коэффициенты a
+ *
+ * @param {number[]} tableNet сеточное приближение
+ * @param {number} m порядок производной
+ * @param {number} k порядок точности
+ */
 function getCoefficients(tableNet, m, k) {
   const matr = getMatrixFromNet(tableNet, m, k);
   return gaussMethod(matr);  
 }
 
+/**
+ * Считает приближенное значение производной в заданной точке
+ *
+ * @param {function} func      функция, производную которой нужно вычислить
+ * @param {number}   x         точка, в которой нужно найти значение производной
+ * @param {number[]} tableNet  сеточное приближение
+ * @param {number}   m порядок производной
+ * @param {number}   k порядок точности
+ * @param {number}   h шаг сетки
+ * @returns {number} значение производной
+ */
 function getNumericalAproximation(func, x, tableNet, m, k, h) {
   const nodes = [];
   for (let i = 0; i < tableNet.length; ++i) {
