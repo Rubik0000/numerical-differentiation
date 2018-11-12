@@ -4,7 +4,8 @@
 
 
 const drawModule = (function(funcCanvasId, derivativeCanvasId, defectRealCanvasId, defectIntendedCanvasId) {
-  const DRAW_STEP = 0.2;
+  //const DRAW_STEP = 0.2;
+  const DRAW_STEP = 0.001;
 
   const ctxFunc = document.getElementById(funcCanvasId);
   const ctxDefReal = document.getElementById(defectRealCanvasId);
@@ -30,23 +31,23 @@ const drawModule = (function(funcCanvasId, derivativeCanvasId, defectRealCanvasI
           yAxes: [{
             type: 'linear',
           }]
-        }
+        }        
       }
     });
   }
 
-  function drawGraph(chart, func, left, right, label, color) {
+  function drawGraph(chart, func, left, right, label, color, step) {
     const minX = chart.options.scales.xAxes[0].ticks.min + DRAW_STEP;
     const maxX = chart.options.scales.xAxes[0].ticks.max - DRAW_STEP;
-    const g = [];
-    for (let x = left; x <= right; x += DRAW_STEP) {
+    const g = [];    
+    for (let x = left; x <= right; x += step) {
       g.push({ x : x, y : func(x) });
     }
     chart.data.datasets.push({
       data : g,
       fill : false,
       label : label,
-      //pointRadius : 1,
+      pointRadius : 0,
       borderColor: color,
     });
     chart.update();
@@ -60,17 +61,17 @@ const drawModule = (function(funcCanvasId, derivativeCanvasId, defectRealCanvasI
 
 
   return {
-    drawOnFuncChart : (func, left, right) => 
-      drawGraph(funcChart, func, left, right, "функция", "blue"),
+    drawOnFuncChart : (func, left, right, name, color) => 
+      drawGraph(funcChart, func, left, right, name, color, 0.2),
 
-    drawOnDerivativeChart : (func, left, right) =>
-      drawGraph(derivativeChart, func, left, right, "приближенная производная", "green"), 
+    drawOnDerivativeChart : (func, left, right, name, color) =>
+      drawGraph(derivativeChart, func, left, right, name, color, 0.001), 
     
-    drawOnDefectRealChart : (func, left, right) => 
-      drawGraph(defectRealChart, func, left, right, "полученная погрешность", "red"),
+    drawOnDefectRealChart : (func, left, right, name, color) => 
+      drawGraph(defectRealChart, func, left, right, name, color, 0.001),
 
-    drawOnDefectIntChart : (func, left, right) =>
-      drawGraph(defectIntChart, func, left, right, "оцененная погрешность", "pink"),
+    drawOnDefectIntChart : (func, left, right, name, color) =>
+      drawGraph(defectIntChart, func, left, right, name, color, 0.001),
 
     removeFromFuncChart : () => removeData(funcChart),
     removeFromRealChart : () => removeData(defectRealChart),
@@ -99,10 +100,7 @@ const inputModule = (function(hInputId, leftInputId, rightInputId) {
   const leftInput = document.getElementById(leftInputId);
   const rightInput = document.getElementById(rightInputId);
   
-  let currH = 0.1;
-  let currLeft = -5;
-  let currRight = 5;
-
+  let currH = 0.1;  
   function onHchange(callback) {
     hInput.addEventListener("keyup", key => {
       const H = Number(hInput.value);
@@ -114,44 +112,12 @@ const inputModule = (function(hInputId, leftInputId, rightInputId) {
       if (currH === H) return;
 
       currH = H;
-      callback(currH, currLeft, currRight); 
+      callback(currH); 
     });
   }
-
-  function onLeftChange(callback) {
-    leftInput.addEventListener("keyup", key => {
-      const left = Number(leftInput.value);
-      if (isNaN(left) || left >= currRight) {
-        leftInput.style.backgroundColor = BAD_COLOR;
-        return;
-      }
-      leftInput.style.backgroundColor = GOOD_COLOR;
-      if (left === currLeft) return;
-
-      currLeft = left;
-      callback(currH, currLeft, currRight);
-    });
-  }
-
-  function onRightChange(callback) {
-    rightInput.addEventListener("keyup", key => {
-      const right = Number(rightInput.value);
-      if (isNaN(right) || right <= currLeft) {
-        rightInput.style.backgroundColor = BAD_COLOR;
-        return;
-      }
-      rightInput.style.backgroundColor = GOOD_COLOR;
-      if (right === currRight) return;
-
-      currRight = right;
-      callback(currH, currLeft, currRight);
-    });
-  }  
 
   return {
-    onHchange : onHchange,
-    onLeftChange : onLeftChange,
-    onRightChange : onRightChange,
+    onHchange : onHchange,    
   }
 
 })("step", "left", "right");
@@ -161,12 +127,12 @@ function main() {
   const func = x => Math.sin(x);
   const der1 = x => Math.cos(x);
   const der2 = x => -Math.sin(x);
-  const defectMethod = (x, h) =>
-    h / 2 * Math.abs(der2(x));
+  const defectMethod = h =>
+    h / 2;
 
-  const eps = 10e-52;
-  const defectCalc = (x, h) =>  
-    eps * func(x) / h;
+  const eps = 10e-5;
+  const defectCalc = h =>  
+    eps / h;
 
   const m = 1;
   const k = 3;
@@ -176,34 +142,53 @@ function main() {
   const aprDer = (x, h) => 
     getNumericalAproximation(func, x, net, m, k, h);
 
-  inputModule.onHchange((h, l, r) => {
-    drawModule.removeFromRealChart();
-    drawModule.removeFromDerivativeChart();
-    drawModule.removeFromIntChart();
+  // inputModule.onHchange(h => {
+  //   drawModule.removeFromRealChart();
+  //   drawModule.removeFromDerivativeChart();
+  //   drawModule.removeFromIntChart();
 
-    drawModule.drawOnDefectRealChart(x => Math.abs(aprDer(x, h) - der1(x)), l, r);
-    drawModule.drawOnDerivativeChart(x => aprDer(x, h), l, r);
-    drawModule.drawOnDefectIntChart(x => defectMethod(x, h) + defectCalc(x, h), l, r);
-  });
+  //   drawModule.drawOnDefectRealChart(x => Math.abs(aprDer(x, h) - der1(x)), l, r);
+  //   drawModule.drawOnDerivativeChart(x => aprDer(x, h), l, r);
+  //   drawModule.drawOnDefectIntChart(x => defectMethod(x, h) + defectCalc(x, h), l, r);
+  // });
 
-  const redrawAll = (h, l, r) => {
+  const redrawAll = h => {
     drawModule.removeFromAll();
 
-    drawModule.drawOnFuncChart(func, l, r);
-    drawModule.drawOnDerivativeChart(x => aprDer(x, h), l, r);
-    drawModule.drawOnDefectRealChart(x => Math.abs(aprDer(x, h) - der1(x)), l, r);
-    drawModule.drawOnDefectIntChart(x => defectMethod(x, h) + defectCalc(x, h), l, r);
-  };
+    drawModule.drawOnFuncChart(x => aprDer(x, h), -5, 5, "Приближенная производная", "blue");
+    drawModule.drawOnDerivativeChart(h => defectMethod(h), 0, h, "Погрешность метода", "orange");
+    
+    drawModule.drawOnDefectIntChart(h => defectCalc(h), 0, h, "Погрешность вычислений", "pink");
+    
+    drawModule.drawOnDefectRealChart(h => {
+      const der = x => (func(x + h) - func(x)) / h;
+      return makeExperiment(der, der1, 5, 5);            
+    }, 0, h, "полученная погрешность", "green");
+    drawModule.drawOnDefectRealChart(h => {
+        return h  / 2 + 10e-5/ h;
+    }, 0, h, "спрогнозированная погрешность", "red");    
+  };  
 
-  inputModule.onLeftChange(redrawAll);
-  inputModule.onRightChange(redrawAll);
-
-  drawModule.drawOnFuncChart(func, -5, 5);
-  drawModule.drawOnDerivativeChart(x => aprDer(x, 0.1), -5, 5);
-  drawModule.drawOnDefectRealChart(x => Math.abs(aprDer(x, 0.1) - der1(x)), -5, 5);  
-  drawModule.drawOnDefectIntChart(x => defectMethod(x, 0.1) + defectCalc(x, 0.1), -5, 5);
+  inputModule.onHchange(h => redrawAll(h));
+  redrawAll(0.1);
+  // drawModule.drawOnFuncChart(func, -5, 5);
+  // drawModule.drawOnDerivativeChart(x => aprDer(x, 0.1), -5, 5);
+  // drawModule.drawOnDefectRealChart(x => Math.abs(aprDer(x, 0.1) - der1(x)), -5, 5);  
+  // drawModule.drawOnDefectIntChart(x => defectMethod(x, 0.1) + defectCalc(x, 0.1), -5, 5);
 }
 
+function makeExperiment(func1, func2, count, accuracy) {
+  let max = 0;
+  for (let i = 0; i <= count; ++i) {
+    let x = Math.random() * 10;
+    let t1 = func1(x).toFixed(accuracy);
+    let t2 = func2(x).toFixed(accuracy); 
+    let a = Number.parseFloat(t1);
+    let b = Number.parseFloat(t2); 
+    max = Number.parseFloat(Math.max(max, Math.abs(a - b)).toFixed(accuracy));
+  }
+  return max;
+}
 
 
 /**
